@@ -1,0 +1,38 @@
+node{
+def mavenHome = tool name: "maven3.8.3" 
+properties([buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '5', daysToKeepStr: '', numToKeepStr: '5')), pipelineTriggers([pollSCM('* * * * *')])])
+
+stage('checkoutcode'){
+git branch: 'development', credentialsId: 'f454dc1b-4445-4509-9504-41e9dc3bdf45', 
+url: 'https://github.com/bms-ss-creativeprojects/maven-web-application.git'
+}
+stage('Build'){
+sh "${mavenHome}/bin/mvn clean package"
+}
+
+stage('ExcuteSonarQubeReport'){
+sh "${mavenHome}/bin/mvn package sonar:sonar"
+}
+stage('uploadArtifactsintoNexusRepo'){
+sh "${mavenHome}/bin/mvn deploy"
+
+}
+stage('DeployApplicationintoTomcatserver') {
+sshagent(['e3e93a51-6cc4-46e2-b62c-3a7fbc0067d7']) {
+sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@3.108.235.202:/opt/apache-tomcat-9.0.54/webapps"
+
+
+}
+
+}
+
+/*stage('sendEmailNotification') {
+mail bcc: '', body: '''Build over.
+
+Regards
+Bhanu
+95500 6105''', cc: 'bhanudhulipalla@gmail.com', from: '', replyTo: '', subject: 'Build over.', to: 'bhanudhulipalla@gmail.com'
+
+}
+*/
+}

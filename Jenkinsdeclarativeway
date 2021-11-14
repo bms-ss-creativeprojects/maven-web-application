@@ -1,0 +1,58 @@
+pipeline{
+agent any
+tools{
+maven 'maven3.8.3'
+}
+stages{
+stage('checkoutthecode'){
+steps{
+git credentialsId: 'f454dc1b-4445-4509-9504-41e9dc3bdf45', url:
+ 'https://github.com/bms-ss-creativeprojects/maven-web-application.git'
+}
+}
+stage('Build'){
+steps{
+sh "mvn clean package"
+}
+}
+stage('ExecuteSonarQubeReport'){
+steps{
+sh "mvn sonar:sonar"
+}
+}
+stage('uploadArtifactsintoNexus'){
+steps{
+sh "mvn deploy"
+}
+}
+stage('DeployingappintoTomcatserver'){
+steps{
+sshagent(['e3e93a51-6cc4-46e2-b62c-3a7fbc0067d7']){
+sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@3.108.217.170:/opt/apache-tomcat-9.0.54/webapps"
+}
+}
+}
+
+}//stagesclosing
+/*
+post{
+ success{
+ mail bcc: '', body: '''Build over - success
+
+Regards
+Bhanu
+95500 6105''', cc: 'bhanudhulipalla@gmail.com', from: '', replyTo: '', subject: 'Build over.', 
+to: 'bhanudhulipalla@gmail.com'
+ }
+ failure{
+ mail bcc: '', body: '''Build over - failure
+
+Regards
+Bhanu
+95500 6105''', cc: 'bhanudhulipalla@gmail.com', from: '', replyTo: '', subject: 'Build over.', 
+to: 'bhanudhulipalla@gmail.com'
+ }
+}
+*/
+
+}//pipelineclosing
